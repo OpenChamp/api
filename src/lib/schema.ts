@@ -11,7 +11,7 @@ export const users = sqliteTable("users", {
 		.notNull()
 		.$defaultFn(() => ulid()),
 	tag: text("tag", { length: 32 }).notNull(),
-	password_hash: text("password_hash"),
+	password_hash: text("password_hash").notNull(),
 	avatar: text("avatar", {
 		enum: availableAvatarKeys,
 	})
