@@ -3,15 +3,21 @@
 	"version": "1.0.50",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"dev": "bun run --watch src/index.ts"
+		"dev": "bun run --watch src/index.ts",
+		"drizzle:generate": "bun run ensure-db-exists.ts && drizzle-kit generate --config drizzle.config.ts",
+		"drizzle:migrate": "bun run ensure-db-exists.ts && drizzle-kit migrate --config drizzle.config.ts"
 	},
 	"dependencies": {
+		"@0x57/ulid": "^0.0.0",
+		"drizzle-orm": "^0.30.10",
 		"elysia": "latest"
 	},
 	"devDependencies": {
-		"bun-types": "latest",
+		"@libsql/client": "^0.6.0",
 		"@typescript-eslint/eslint-plugin": "^7.10.0",
 		"@typescript-eslint/parser": "^7.10.0",
+		"bun-types": "latest",
+		"drizzle-kit": "^0.21.4",
 		"eslint": "^9.3.0",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-config-xo": "^0.45.0",
