@@ -8,9 +8,16 @@ for(let i = 0; i < Total_test_users; i++) {
 setInterval(()=>{
     console.clear();
     for (let i = 0; i < Connections.length; i++) {
-        console.log(`User ID: ${i} | RTT: ${Connections[i].rtt}ms`)
+        //console.log(`User ID: ${i} | RTT: ${Connections[i].rtt}ms`)
     }
 }, 1000)
+
+setInterval(()=>{
+    let p1 = Connections.pop();
+    let p2 = Connections.pop();
+    p1.send("queue");
+    p2.send("queue");
+}, 5000)
 
 function AddUser() {
     const socket = new WebSocket("ws://localhost:8080/ws");
@@ -24,6 +31,8 @@ function AddUser() {
             socket.timerStart = Date.now();
             console.time("RTT");
             socket.send("ping");
+        } else {
+            console.log(event.data);
         }
     }
     Connections.push(socket);
