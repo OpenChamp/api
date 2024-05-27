@@ -1,20 +1,19 @@
 import cors from "@elysiajs/cors";
-import jwtMw from "@elysiajs/jwt";
+import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { Elysia } from "elysia";
+import jwt from "./jwt";
+import { db } from "./lib/db";
+import { routes as sessionRoutes } from "./routes/session";
+import { routes as usersRoutes } from "./routes/users";
 
-if (!Bun.env.JWT_SECRET) {
-	console.error("env.JWT_SECRET is required");
-	process.exit(1);
-}
-
-export const jwt = jwtMw({
-	name: "jwt",
-	secret: Bun.env.JWT_SECRET,
-});
+// attemt to migrate the database on launch, we do this because we are using bun:sqlite which is not supported by the drizzle-kit cli
+migrate(db, { migrationsFolder: "./drizzle" });
 
 const app = new Elysia({ prefix: "/v0" })
 	.use(cors())
 	.use(jwt)
+	.use(usersRoutes)
+	.use(sessionRoutes)
 	.listen(Bun.env.PORT ?? 8080);
 
 // import { StartInstances } from "./queue";

@@ -1,12 +1,38 @@
 import { eq } from "drizzle-orm";
 import Elysia, { t } from "elysia";
-import { jwt } from "..";
+import jwt from "../jwt";
 import { db } from "../lib/db";
-import { users } from "../lib/schema";
+import { projectionUserPublic, tUser, users } from "../lib/schema";
 
 export const routes = new Elysia({ prefix: "/session" })
 	.use(jwt)
-	.get("/", ({ jwt }) => {}) // TODO: return current user
+	.get(
+		"/",
+		async ({ jwt, set, headers }) => {
+			try {
+				const token = headers.authorization;
+				if (!token) throw new Error("No token provided");
+				const { tag } = (await jwt.verify(token)) as { tag: string };
+				const [user] = await db
+					.select(projectionUserPublic)
+					.from(users)
+					.where(eq(users.tag, tag))
+					.limit(1);
+				return user;
+			} catch (error) {
+				set.status = 401;
+				return { error: "Invalid token" };
+			}
+		},
+		{
+			response: {
+				200: tUser,
+				401: t.Object({
+					error: t.String(),
+				}),
+			},
+		},
+	)
 	.post(
 		"/",
 		async ({ set, body: { tag, password }, jwt }) => {

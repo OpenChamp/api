@@ -1,5 +1,6 @@
 import { ulid } from "@0x57/ulid";
 import { numeric, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { t } from "elysia";
 import { avatars as availableAvatars } from "./avatars";
 
 const availableAvatarKeys = Object.keys(
@@ -20,6 +21,20 @@ export const users = sqliteTable("users", {
 	created_at: text("created_at")
 		.notNull()
 		.$defaultFn(() => new Date().toISOString()),
+});
+
+export const projectionUserPublic = {
+	id: users.id,
+	tag: users.tag,
+	avatar: users.avatar,
+	created_at: users.created_at,
+};
+
+export const tUser = t.Object({
+	id: t.String(),
+	tag: t.String(),
+	avatar: t.String(),
+	created_at: t.String(),
 });
 
 export const ranks = sqliteTable("ranks", {
