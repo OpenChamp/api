@@ -22,11 +22,8 @@ export const routes = new Elysia({ prefix: "/users" })
 				return { error: "That tag is already taken" };
 			}
 			const password_hash = await Bun.password.hash(password);
-			const [created_user] = await db
-				.insert(users)
-				.values({ tag, password_hash })
-				.returning();
-			const token = await jwt.sign({ tag: created_user.tag });
+			await db.insert(users).values({ tag, password_hash });
+			const token = await jwt.sign({ tag });
 			return { token };
 		},
 		{
