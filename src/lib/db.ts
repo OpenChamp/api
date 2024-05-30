@@ -1,6 +1,10 @@
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
+import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2/promise";
 
-const sqlite = new Database("sqlite.db");
+const connection = await mysql.createConnection({
+	host: Bun.env.db_host,
+	user: Bun.env.db_user,
+	password: Bun.env.db_password,
+});
 
-export const db = drizzle(sqlite);
+export const db = drizzle(connection);

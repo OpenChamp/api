@@ -1,13 +1,10 @@
 import cors from "@elysiajs/cors";
-import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { Elysia } from "elysia";
 import jwt from "./jwt";
-import { db } from "./lib/db";
 import { routes as sessionRoutes } from "./routes/session";
 import { routes as usersRoutes } from "./routes/users";
 
 // attemt to migrate the database on launch, we do this because we are using bun:sqlite which is not supported by the drizzle-kit cli
-migrate(db, { migrationsFolder: "./drizzle" });
 
 const app = new Elysia({ prefix: "/v0" })
 	.use(cors())

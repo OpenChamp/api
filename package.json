@@ -12,7 +12,8 @@
     "@elysiajs/cors": "^1.0.2",
     "@elysiajs/jwt": "^1.0.2",
     "drizzle-orm": "^0.30.10",
-    "elysia": "latest"
+    "elysia": "latest",
+    "mysql2": "^3.9.9"
   },
   "devDependencies": {
     "@libsql/client": "^0.6.0",
