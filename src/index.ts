@@ -1,6 +1,8 @@
 import cors from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import jwt from "./jwt";
+import { migrate } from 'drizzle-orm/mysql2/migrator';
+import { db, connection } from './lib/db';
 import { routes as sessionRoutes } from "./routes/session";
 import { routes as usersRoutes } from "./routes/users";
 
@@ -98,6 +100,7 @@ const app = new Elysia({ prefix: "/v0" })
 // setInterval(() => {
 // 	StartInstances(Queue);
 // }, 1000);
+await migrate(db, { migrationsFolder: "./drizzle" });
 
 console.log(
 	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
