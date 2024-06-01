@@ -13,6 +13,7 @@ export const routes = new Elysia({ prefix: "/session" })
 				const token = headers.authorization;
 				if (!token) throw new Error("No token provided");
 				const { tag } = (await jwt.verify(token)) as { tag: string };
+				if (!tag) throw new Error("Invalid token"); // checking for invalid token
 				const [user] = await db
 					.select(projectionUserPublic)
 					.from(users)
