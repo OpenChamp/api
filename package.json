@@ -13,7 +13,8 @@
     "@elysiajs/jwt": "^1.0.2",
     "drizzle-orm": "^0.30.10",
     "elysia": "latest",
-    "mysql2": "^3.9.9"
+    "mysql2": "^3.9.9",
+    "xstate": "5"
   },
   "devDependencies": {
     "@libsql/client": "^0.6.0",

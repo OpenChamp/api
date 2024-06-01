@@ -1,16 +1,71 @@
 import cors from "@elysiajs/cors";
+import { migrate } from "drizzle-orm/mysql2/migrator";
 import { Elysia } from "elysia";
 import jwt from "./jwt";
+import { db } from "./lib/db";
 import { routes as sessionRoutes } from "./routes/session";
 import { routes as usersRoutes } from "./routes/users";
 
 // attemt to migrate the database on launch, we do this because we are using bun:sqlite which is not supported by the drizzle-kit cli
+await migrate(db, { migrationsFolder: "./drizzle" });
+
+const socketHeartbeatInterval = 15000;
+const heartbeats = new Map<string, Timer>();
+const socketTagMap = new Map<string, string>();
 
 const app = new Elysia({ prefix: "/v0" })
 	.use(cors())
 	.use(jwt)
 	.use(usersRoutes)
 	.use(sessionRoutes)
+	.ws("/ws", {
+		close(ws) {
+			console.log(`User disconnected: ${ws.id}`);
+		},
+		async open(ws) {
+			const token = ws.data.query.jwt;
+			console.log(token);
+			if (!token) {
+				ws.close();
+				return;
+			}
+			const { tag } = (await ws.data.jwt.verify(token)) as { tag: string };
+			if (!tag) {
+				ws.close();
+				return;
+			}
+			socketTagMap.set(ws.id, tag);
+			heartbeats.set(
+				ws.id,
+				setTimeout(() => {
+					ws.close();
+				}, socketHeartbeatInterval * 1.5), // 1.5x the interval as a safety margin
+			);
+			ws.send({
+				e: "start_heartbeat",
+				d: { interval: socketHeartbeatInterval },
+			});
+			console.log(`User connected: ${ws.id}, ${tag}`);
+		},
+		message(ws, message) {
+			console.log(message);
+			if (!message || typeof message !== "object" || !("e" in message)) {
+				console.log(`${ws.id} sent invalid message, closing connection`);
+				ws.close();
+				return;
+			}
+			if (message.e === "heartbeat") {
+				clearTimeout(heartbeats.get(ws.id));
+				heartbeats.set(
+					ws.id,
+					setTimeout(() => {
+						ws.close();
+					}, socketHeartbeatInterval * 1.5),
+				);
+				ws.send({ e: "heartbeat_ack" });
+			}
+		},
+	})
 	.listen(Bun.env.PORT ?? 8080);
 
 // import { StartInstances } from "./queue";
