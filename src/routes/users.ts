@@ -152,17 +152,17 @@ export const routes = new Elysia({ prefix: "/users" })
 
 				set.status = 200;
 				return { response: "Account successfully deleted" };
-			} catch (error) {
+			} catch (error: Error | unknown | any) {
 				if (error instanceof Error) {
 					switch (error.message) {
 						case "No token provided":
 						case "Invalid token":
 							set.status = 401;
 							return { error: "Invalid token" };
-						default:
-							set.status = 500;
-							return { error: "Unknown error" };
 					}
+				} else {
+					set.status = 404;
+					return { error: "Unknown error" };
 				}
 			}
 		},
