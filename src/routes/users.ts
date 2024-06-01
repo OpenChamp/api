@@ -24,11 +24,28 @@ export const routes = new Elysia({ prefix: "/users" })
 			}
 		},
 		{
+			params: t.Object(
+				{
+					tag: t.String(),
+				},
+				{
+					description: "Expects a tag to search for",
+				},
+			),
 			response: {
 				200: tUser,
-				404: t.Object({
-					error: t.String(),
-				}),
+				404: t.Object(
+					{
+						error: t.String(),
+					},
+					{
+						description: "Tag was not found",
+					},
+				),
+			},
+			detail: {
+				tags: ["User"],
+				description: "Get an user by their tag",
 			},
 		},
 	)
@@ -48,7 +65,7 @@ export const routes = new Elysia({ prefix: "/users" })
 				.where(eq(users.tag, tag))
 				.limit(1);
 			if (user) {
-				set.status = 400;
+				set.status = 409;
 				return { error: "That tag is already taken" };
 			}
 			const password_hash = await Bun.password.hash(password);
@@ -57,20 +74,38 @@ export const routes = new Elysia({ prefix: "/users" })
 			return { token };
 		},
 		{
-			body: t.Object({
-				tag: t.String(),
-				password: t.String(),
-			}),
+			body: t.Object(
+				{
+					tag: t.String(),
+					password: t.String(),
+				},
+				{ description: "Expects a tag and a password" },
+			),
 			response: {
-				200: t.Object({
-					token: t.String(),
-				}),
-				400: t.Object({
-					error: t.String(),
-				}),
-				422: t.Object({
-					error: t.String(),
-				}),
+				200: t.Object(
+					{
+						token: t.String(),
+					},
+					{ description: "User account was created successfully" },
+				),
+				409: t.Object(
+					{
+						error: t.String(),
+					},
+					{ description: "The tag is already occupied" },
+				),
+				422: t.Object(
+					{
+						error: t.String(),
+					},
+					{
+						description: "Invalid tag sent, Characters allowed: a-z, 0-9, ., _",
+					},
+				),
+			},
+			detail: {
+				tags: ["User"],
+				description: "Create an user account",
 			},
 		},
 	)
@@ -89,7 +124,7 @@ export const routes = new Elysia({ prefix: "/users" })
 					.set({ description: description })
 					.where(eq(users.tag, tag)); // Update database entry
 
-				return { response: "Post successful" };
+				return { response: "Update successful" };
 			} catch (error: Error | unknown | any) {
 				if (error instanceof Error) {
 					switch (error.message) {
@@ -104,23 +139,133 @@ export const routes = new Elysia({ prefix: "/users" })
 							set.status = 500;
 							return { error: "Unknown error" };
 					}
+				} else {
+					set.status = 500;
+					return { error: "Unknown error" };
 				}
 			}
 		},
 		{
-			body: t.Object({
-				description: t.String(),
-			}),
+			body: t.Object(
+				{
+					description: t.String(),
+				},
+				{ description: "Expects a description to use" },
+			),
 			response: {
-				500: t.Object({
-					error: t.String(),
-				}),
-				401: t.Object({
-					error: t.String(),
-				}),
-				400: t.Object({
-					error: t.String(),
-				}),
+				200: t.Object(
+					{
+						response: t.String(),
+					},
+					{
+						description: "Successful update of user description",
+					},
+				),
+				500: t.Object(
+					{
+						error: t.String(),
+					},
+					{
+						description:
+							"An unknown error occurred, most likely on the server side",
+					},
+				),
+				401: t.Object(
+					{
+						error: t.String(),
+					},
+					{ description: "Tried to authenticate with an invalid token" },
+				),
+				400: t.Object(
+					{
+						error: t.String(),
+					},
+					{ description: "You have a malformed request body" },
+				),
+			},
+			detail: {
+				tags: ["User Settings"],
+				description: "Update user description",
+			},
+		},
+	)
+	.put(
+		"/@me/settings/displayname", // Display name settings
+		async ({ jwt, headers, set, body: { name } }) => {
+			try {
+				if (!name) throw new Error('Item "name" missing in body'); // check if name is included in body
+				const token = headers.authorization;
+				if (!token) throw new Error("No token provided"); // check if token exists in headers
+				const { tag } = (await jwt.verify(token)) as { tag: string };
+				if (!tag) throw new Error("Invalid token"); // checking for invalid token
+
+				await db
+					.update(users)
+					.set({ display_name: name })
+					.where(eq(users.tag, tag)); // Update database entry
+
+				return { response: "Update successful" };
+			} catch (error: Error | unknown | any) {
+				if (error instanceof Error) {
+					switch (error.message) {
+						case 'Item "name" missing in body':
+							set.status = 400;
+							return { error: error.message };
+						case "No token provided":
+						case "Invalid token":
+							set.status = 401;
+							return { error: "Invalid token" };
+						default:
+							set.status = 500;
+							return { error: "Unknown error" };
+					}
+				} else {
+					set.status = 500;
+					return { error: "Unknown error" };
+				}
+			}
+		},
+		{
+			body: t.Object(
+				{
+					name: t.String(),
+				},
+				{ description: "Expects a display name to use" },
+			),
+			response: {
+				200: t.Object(
+					{
+						response: t.String(),
+					},
+					{
+						description: "Successful update of user display name",
+					},
+				),
+				500: t.Object(
+					{
+						error: t.String(),
+					},
+					{
+						description:
+							"An unknown error occurred, most likely on the server side",
+					},
+				),
+				401: t.Object(
+					{
+						error: t.String(),
+					},
+					{ description: "Tried to authenticate with an invalid token" },
+				),
+				400: t.Object(
+					{
+						error: t.String(),
+					},
+					{ description: "You have a malformed request body" },
+				),
+			},
+			detail: {
+				tags: ["User Settings"],
+				description: "Update user display name",
 			},
 		},
 	)
@@ -159,25 +304,60 @@ export const routes = new Elysia({ prefix: "/users" })
 						case "Invalid token":
 							set.status = 401;
 							return { error: "Invalid token" };
+						default:
+							set.status = 500;
+							return { error: "Unknown error" };
 					}
 				} else {
-					set.status = 404;
+					set.status = 500;
 					return { error: "Unknown error" };
 				}
 			}
 		},
 		{
-			body: t.Object({
-				user_tag: t.String(),
-				password: t.String(),
-			}),
+			body: t.Object(
+				{
+					user_tag: t.String(),
+					password: t.String(),
+				},
+				{
+					description: "Expects an user tag and a password",
+				},
+			),
 			response: {
-				200: t.Object({
-					response: t.String(),
-				}),
-				401: t.Object({
-					error: t.String(),
-				}),
+				200: t.Object(
+					{
+						response: t.String(),
+					},
+					{
+						description: "Successful removal of user account",
+					},
+				),
+				500: t.Object(
+					{
+						error: t.String(),
+					},
+					{
+						description:
+							"An unknown error occurred, most likely on the server side",
+					},
+				),
+				401: t.Object(
+					{
+						error: t.String(),
+					},
+					{ description: "Tried to authenticate with an invalid token" },
+				),
+				400: t.Object(
+					{
+						error: t.String(),
+					},
+					{ description: "You have a malformed request body" },
+				),
+			},
+			detail: {
+				tags: ["User Actions"],
+				description: "Remove user account",
 			},
 		},
 	);
