@@ -74,7 +74,7 @@ export const routes = new Elysia({ prefix: "/users" })
 			},
 		},
 	)
-	.post(
+	.put(
 		"/@me/settings/description", // Description settings
 		async ({ jwt, headers, set, body: { description } }) => {
 			try {
