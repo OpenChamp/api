@@ -16,7 +16,7 @@ export const routes = new Elysia({ prefix: "/users" })
 					.from(users)
 					.where(eq(users.tag, tag))
 					.limit(1);
-				if (user === undefined) throw new Error("User not found");
+				if (user === undefined) throw new Error("user was not found");
 				return user;
 			} catch (error: Error | unknown) {
 				set.status = 404;
