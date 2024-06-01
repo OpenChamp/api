@@ -37,7 +37,7 @@ export const projectionUserPublic = {
 
 export const tUser = t.Object({
 	id: t.String(),
-	tag: t.String(),
+	tag: t.RegExp("^[a-z0-9_.]+$"),
 	avatar: t.String(),
 	created_at: t.Date(),
 	description: t.String(),
