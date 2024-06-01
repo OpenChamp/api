@@ -83,8 +83,6 @@ export const routes = new Elysia({ prefix: "/users" })
 				if (!token) throw new Error("No token provided"); // check if token exists in headers
 				const { tag } = (await jwt.verify(token)) as { tag: string };
 				if (!tag) throw new Error("Invalid token"); // checking for invalid token
-				console.log("Token tests passed");
-				console.log(description);
 
 				await db
 					.update(users)
@@ -121,6 +119,66 @@ export const routes = new Elysia({ prefix: "/users" })
 					error: t.String(),
 				}),
 				400: t.Object({
+					error: t.String(),
+				}),
+			},
+		},
+	)
+	.post(
+		"/@me/actions/destructive/delete",
+		async ({ headers, set, body: { user_tag, password }, jwt }) => {
+			try {
+				const token = headers.authorization;
+				console.log(token);
+				if (!token) throw new Error("No token provided"); // check if token exists in headers
+				const { tag } = (await jwt.verify(token)) as {
+					tag: string;
+				};
+				console.log(tag);
+				if (!tag) throw new Error("Invalid token"); // checking for invalid token
+				console.log("Token tests passed");
+
+				const [user] = await db // password checking
+					.select({ password_hash: users.password_hash })
+					.from(users)
+					.where(eq(users.tag, user_tag))
+					.limit(1);
+				if (
+					!user ||
+					!(await Bun.password.verify(password, user.password_hash))
+				) {
+					set.status = 401;
+					return { error: "Invalid username or password" };
+				}
+
+				await db.delete(users).where(eq(users.tag, user_tag));
+
+				set.status = 200;
+				return { response: "Account successfully deleted" };
+			} catch (error) {
+				if (error instanceof Error) {
+					switch (error.message) {
+						case "No token provided":
+						case "Invalid token":
+							set.status = 401;
+							return { error: "Invalid token" };
+						default:
+							set.status = 500;
+							return { error: "Unknown error" };
+					}
+				}
+			}
+		},
+		{
+			body: t.Object({
+				user_tag: t.String(),
+				password: t.String(),
+			}),
+			response: {
+				200: t.Object({
+					response: t.String(),
+				}),
+				401: t.Object({
 					error: t.String(),
 				}),
 			},
