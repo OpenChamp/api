@@ -1,8 +1,8 @@
 import cors from "@elysiajs/cors";
+import { migrate } from "drizzle-orm/mysql2/migrator";
 import { Elysia } from "elysia";
 import jwt from "./jwt";
-import { migrate } from 'drizzle-orm/mysql2/migrator';
-import { db, connection } from './lib/db';
+import { db } from "./lib/db";
 import { routes as sessionRoutes } from "./routes/session";
 import { routes as usersRoutes } from "./routes/users";
 

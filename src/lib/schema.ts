@@ -36,7 +36,7 @@ export const tUser = t.Object({
 	id: t.String(),
 	tag: t.String(),
 	avatar: t.String(),
-	created_at: t.String(),
+	created_at: t.Date(),
 });
 
 export const ranks = mysqlTable("ranks", {

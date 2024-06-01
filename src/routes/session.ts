@@ -8,7 +8,7 @@ export const routes = new Elysia({ prefix: "/session" })
 	.use(jwt)
 	.get(
 		"/",
-		async ({ jwt, set, headers }) => {
+		async ({ set, headers, jwt }) => {
 			try {
 				const token = headers.authorization;
 				if (!token) throw new Error("No token provided");

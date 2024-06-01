@@ -5,7 +5,7 @@ const connection = await mysql.createConnection({
 	host: Bun.env.db_host,
 	user: Bun.env.db_user,
 	password: Bun.env.db_password,
-    database: "openchampapi"
+	database: Bun.env.db_name,
 });
 
 export const db = drizzle(connection);
