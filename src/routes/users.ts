@@ -124,19 +124,16 @@ export const routes = new Elysia({ prefix: "/users" })
 			},
 		},
 	)
-	.post(
-		"/@me/actions/destructive/delete",
+	.delete(
+		"/@me",
 		async ({ headers, set, body: { user_tag, password }, jwt }) => {
 			try {
 				const token = headers.authorization;
-				console.log(token);
 				if (!token) throw new Error("No token provided"); // check if token exists in headers
 				const { tag } = (await jwt.verify(token)) as {
 					tag: string;
 				};
-				console.log(tag);
 				if (!tag) throw new Error("Invalid token"); // checking for invalid token
-				console.log("Token tests passed");
 
 				const [user] = await db // password checking
 					.select({ password_hash: users.password_hash })
