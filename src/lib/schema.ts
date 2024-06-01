@@ -4,6 +4,7 @@ import {
 	int,
 	mysqlEnum,
 	mysqlTable,
+	tinytext,
 	varchar,
 } from "drizzle-orm/mysql-core";
 import { t } from "elysia";
@@ -23,6 +24,7 @@ export const users = mysqlTable("users", {
 	created_at: datetime("created_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
+	description: tinytext("description").notNull().default(""),
 });
 
 export const projectionUserPublic = {
@@ -30,6 +32,7 @@ export const projectionUserPublic = {
 	tag: users.tag,
 	avatar: users.avatar,
 	created_at: users.created_at,
+	description: users.description,
 };
 
 export const tUser = t.Object({
@@ -37,6 +40,7 @@ export const tUser = t.Object({
 	tag: t.String(),
 	avatar: t.String(),
 	created_at: t.Date(),
+	description: t.String(),
 });
 
 export const ranks = mysqlTable("ranks", {
