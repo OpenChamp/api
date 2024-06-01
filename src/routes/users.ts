@@ -37,6 +37,11 @@ export const routes = new Elysia({ prefix: "/users" })
 	.post(
 		"/", // Create user account
 		async ({ set, body: { tag, password }, jwt }) => {
+			let re = new RegExp("^[a-z0-9_.]+$"); // allowed characters only
+			if (!re.test(tag)) {
+				set.status = 422;
+				return { error: "Invalid tag. Characters allowed: a-z, 0-9, ., _" };
+			}
 			const [user] = await db
 				.select({ password_hash: users.password_hash })
 				.from(users)
@@ -61,6 +66,9 @@ export const routes = new Elysia({ prefix: "/users" })
 					token: t.String(),
 				}),
 				400: t.Object({
+					error: t.String(),
+				}),
+				422: t.Object({
 					error: t.String(),
 				}),
 			},
