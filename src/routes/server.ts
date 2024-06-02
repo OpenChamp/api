@@ -15,7 +15,7 @@ export const routes = new Elysia().use(jwt).get(
 				description: manifestJson.hasOwnProperty("description")
 					? manifestJson["description"]
 					: undefined,
-				vesion: manifestJson.version,
+				version: manifestJson.version,
 				owner: manifestJson.hasOwnProperty("owner")
 					? manifestJson["owner"]
 					: undefined,
