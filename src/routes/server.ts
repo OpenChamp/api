@@ -1,13 +1,13 @@
 import Elysia, { t } from "elysia";
 import jwt from "../jwt";
+import manifestJson from "../manifest.json";
 export const routes = new Elysia().use(jwt).get(
 	"/manifest",
 	async ({ set }) => {
 		try {
-			const path = "../manifest.json";
-			const file = Bun.file(path);
+			//const file = Bun.file(path);
 
-			const manifestJson = await file.json();
+			//const manifestJson = await file.json();
 			set.status = 200;
 			set.headers["Cache-control"] = "no-cache";
 			return {
@@ -23,7 +23,10 @@ export const routes = new Elysia().use(jwt).get(
 					? manifestJson["docs"]
 					: undefined,
 			};
-		} catch (any) {
+		} catch (error: any) {
+			if (error instanceof Error) {
+				console.log(error);
+			}
 			set.status = 500;
 			return {
 				error: "Internal unknown error. Please contact the server admin",
