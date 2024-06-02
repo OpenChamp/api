@@ -3,7 +3,7 @@
 	"editor.insertSpaces": false,
 	"editor.detectIndentation": false,
 	"editor.indentSize": "tabSize",
-	
+
 	"editor.formatOnSave": true,
 	"editor.codeActionsOnSave": {
 		"source.organizeImports": "explicit"
@@ -29,5 +29,20 @@
 	"[markdown]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
 	},
-	"eslint.runtime": "node"
+	"eslint.runtime": "node",
+	"sqltools.connections": [
+		{
+			"mysqlOptions": {
+				"authProtocol": "default"
+			},
+			"previewLimit": 50,
+			"server": "localhost",
+			"port": 3306,
+			"driver": "MariaDB",
+			"name": "openchamp",
+			"database": "openchampapi",
+			"username": "testuser",
+			"password": "tester"
+		}
+	]
 }

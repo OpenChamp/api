@@ -8,11 +8,12 @@ export const routes = new Elysia({ prefix: "/session" })
 	.use(jwt)
 	.get(
 		"/",
-		async ({ jwt, set, headers }) => {
+		async ({ set, headers, jwt }) => {
 			try {
 				const token = headers.authorization;
 				if (!token) throw new Error("No token provided");
 				const { tag } = (await jwt.verify(token)) as { tag: string };
+				if (!tag) throw new Error("Invalid token"); // checking for invalid token
 				const [user] = await db
 					.select(projectionUserPublic)
 					.from(users)
@@ -27,9 +28,18 @@ export const routes = new Elysia({ prefix: "/session" })
 		{
 			response: {
 				200: tUser,
-				401: t.Object({
-					error: t.String(),
-				}),
+				401: t.Object(
+					{
+						error: t.String(),
+					},
+					{
+						description: "Tried to authenticate with an invalid token",
+					},
+				),
+			},
+			detail: {
+				tags: ["Session"],
+				description: "Get the current user session info",
 			},
 		},
 	)
@@ -49,17 +59,36 @@ export const routes = new Elysia({ prefix: "/session" })
 			return { token };
 		},
 		{
-			body: t.Object({
-				tag: t.String(),
-				password: t.String(),
-			}),
+			body: t.Object(
+				{
+					tag: t.String(),
+					password: t.String(),
+				},
+				{
+					description: "Expects an user tag and a password",
+				},
+			),
 			response: {
-				200: t.Object({
-					token: t.String(),
-				}),
-				401: t.Object({
-					error: t.String(),
-				}),
+				200: t.Object(
+					{
+						token: t.String(),
+					},
+					{
+						description: "Successful authentication. Returns token to use",
+					},
+				),
+				401: t.Object(
+					{
+						error: t.String(),
+					},
+					{
+						description: "Tried to authenticate with invalid credentials",
+					},
+				),
+			},
+			detail: {
+				tags: ["Session"],
+				description: 'Create a new user session. Could be called "logging in"',
 			},
 		},
 	);

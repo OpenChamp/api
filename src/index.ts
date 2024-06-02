@@ -1,6 +1,9 @@
 import cors from "@elysiajs/cors";
+import { swagger } from "@elysiajs/swagger";
+import { migrate } from "drizzle-orm/mysql2/migrator";
 import { Elysia } from "elysia";
 import jwt from "./jwt";
+import { db } from "./lib/db";
 import { routes as sessionRoutes } from "./routes/session";
 import { routes as usersRoutes } from "./routes/users";
 
@@ -8,6 +11,30 @@ import { routes as usersRoutes } from "./routes/users";
 
 const app = new Elysia({ prefix: "/v0" })
 	.use(cors())
+	.use(
+		swagger({
+			documentation: {
+				tags: [
+					{
+						name: "User Actions",
+						description: "The actions that the user can take",
+					},
+					{
+						name: "User Settings",
+						description: "The settings the user has access to",
+					},
+					{ name: "Session", description: "Session API endpoints" },
+					{ name: "User", description: "General User API endpoints" },
+				],
+				info: {
+					title: "OpenChampAPI Documentation",
+					description:
+						"This is the OpenChamp API, an API for the LoL inspired video game OpenChamp.",
+					version: "0.1.0",
+				},
+			},
+		}),
+	)
 	.use(jwt)
 	.use(usersRoutes)
 	.use(sessionRoutes)
@@ -98,6 +125,7 @@ const app = new Elysia({ prefix: "/v0" })
 // setInterval(() => {
 // 	StartInstances(Queue);
 // }, 1000);
+await migrate(db, { migrationsFolder: "./drizzle" });
 
 console.log(
 	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
