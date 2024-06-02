@@ -4,7 +4,7 @@ export const routes = new Elysia().use(jwt).get(
 	"/",
 	async ({ set, headers: { "no-cache": "true" } }) => {
 		try {
-			const path = "/path/to/package.json";
+			const path = "../manifest.json";
 			const file = Bun.file(path);
 
 			const manifestJson = await file.json();
