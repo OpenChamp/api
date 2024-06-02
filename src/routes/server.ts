@@ -2,13 +2,14 @@ import Elysia, { t } from "elysia";
 import jwt from "../jwt";
 export const routes = new Elysia().use(jwt).get(
 	"/",
-	async ({ set, headers: { "no-cache": "true" } }) => {
+	async ({ set }) => {
 		try {
 			const path = "../manifest.json";
 			const file = Bun.file(path);
 
 			const manifestJson = await file.json();
 			set.status = 200;
+			set.headers["Cache-control"] = "no-cache";
 			return {
 				name: manifestJson["name"],
 				description: manifestJson.hasOwnProperty("description")
