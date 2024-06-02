@@ -1,7 +1,7 @@
 import Elysia, { t } from "elysia";
 import jwt from "../jwt";
 export const routes = new Elysia().use(jwt).get(
-	"/",
+	"/manifest",
 	async ({ set }) => {
 		try {
 			const path = "../manifest.json";
