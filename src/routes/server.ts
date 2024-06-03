@@ -1,7 +1,7 @@
 import Elysia, { t } from "elysia";
 import jwt from "../jwt";
 import manifestJson from "../manifest.json";
-export const routes = new Elysia().use(jwt).get(
+export const routes = new Elysia({ prefix: "/server" }).use(jwt).get(
 	"/manifest",
 	async ({ set }) => {
 		try {
@@ -35,20 +35,36 @@ export const routes = new Elysia().use(jwt).get(
 	},
 	{
 		response: {
-			200: t.Object({
-				name: t.String(),
-				description: t.MaybeEmpty(t.String()),
-				version: t.String(),
-				//gameServers: t.MaybeEmpty(t.Object({
-				//	len: t.Number(),
-				//	list: t.Array(//TODO)
-				//})),
-				owner: t.MaybeEmpty(t.String()),
-				docs: t.MaybeEmpty(t.String()),
-			}),
-			500: t.Object({
-				error: t.String(),
-			}),
+			200: t.Object(
+				{
+					name: t.String(),
+					description: t.MaybeEmpty(t.String()),
+					version: t.String(),
+					//gameServers: t.MaybeEmpty(t.Object({
+					//	len: t.Number(),
+					//	list: t.Array(//TODO)
+					//})),
+					owner: t.MaybeEmpty(t.String()),
+					docs: t.MaybeEmpty(t.String()),
+				},
+				{
+					description:
+						"The manifest data was sent correctly. Returns the manifest",
+				},
+			),
+			500: t.Object(
+				{
+					error: t.String(),
+				},
+				{
+					description:
+						"An unknown error occurred, most likely on the server side",
+				},
+			),
+		},
+		detail: {
+			tags: ["Server"],
+			description: "Return the manifest file containing server information",
 		},
 	},
 );

@@ -26,6 +26,10 @@ const app = new Elysia({ prefix: "/v0" })
 					},
 					{ name: "Session", description: "Session API endpoints" },
 					{ name: "User", description: "General User API endpoints" },
+					{
+						name: "Server",
+						description: "Server specific API endpoints, like the manifest",
+					},
 				],
 				info: {
 					title: "OpenChampAPI Documentation",

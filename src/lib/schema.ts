@@ -1,5 +1,6 @@
 import { ulid } from "@0x57/ulid";
 import {
+	boolean,
 	datetime,
 	int,
 	mysqlEnum,
@@ -53,9 +54,27 @@ export const ranks = mysqlTable("ranks", {
 });
 
 export const friends = mysqlTable("friends", {
-	user_id: varchar("user_id", { length: 26 }).notNull(),
-	friend_id: varchar("friend_id", { length: 26 }).notNull(),
+	user_id: varchar("user_id", { length: 26 }),
+	friend_id: varchar("friend_id", { length: 26 }),
 	created_at: datetime("created_at")
 		.notNull()
 		.$defaultFn(() => new Date()),
+	friendship_uuid: varchar("friendship_uuid", { length: 36 }).notNull(),
+	accepted: boolean("accepted").notNull().default(false),
+});
+
+export const projectionFriendship = {
+	user_id: friends.user_id,
+	friend_id: friends.friend_id,
+	created_at: friends.created_at,
+	friendship_uuid: friends.friendship_uuid,
+	accepted: friends.accepted,
+};
+
+export const tFriend = t.Object({
+	user_id: t.String(),
+	friend_id: t.String(),
+	created_at: t.Date(),
+	friendship_uuid: t.String(),
+	accepted: t.Boolean(),
 });
