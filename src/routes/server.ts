@@ -1,6 +1,16 @@
 import Elysia, { t } from "elysia";
 import jwt from "../jwt";
 import manifestJson from "../manifest.json";
+
+// General rules for request method additions
+// The order is as follows for all methods:
+// 	- Get
+//  - Post
+//  - Put
+//  - Delete
+//  - Patch
+//
+// Have fun and discuss on discord in case we need to change this order ^^
 export const routes = new Elysia({ prefix: "/server" }).use(jwt).get(
 	"/manifest",
 	async ({ set }) => {

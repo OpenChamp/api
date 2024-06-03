@@ -54,8 +54,8 @@ export const ranks = mysqlTable("ranks", {
 });
 
 export const friends = mysqlTable("friends", {
-	user_id: varchar("user_id", { length: 26 }),
-	friend_id: varchar("friend_id", { length: 26 }),
+	user_id: varchar("user_id", { length: 26 }).notNull(),
+	friend_id: varchar("friend_id", { length: 26 }).notNull(),
 	created_at: datetime("created_at")
 		.notNull()
 		.$defaultFn(() => new Date()),

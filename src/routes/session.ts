@@ -4,6 +4,15 @@ import jwt from "../jwt";
 import { db } from "../lib/db";
 import { projectionUserPublic, tUser, users } from "../lib/schema";
 
+// General rules for request method additions
+// The order is as follows for all methods:
+// 	- Get
+//  - Post
+//  - Put
+//  - Delete
+//  - Patch
+//
+// Have fun and discuss on discord in case we need to change this order ^^
 export const routes = new Elysia({ prefix: "/session" })
 	.use(jwt)
 	.get(
