@@ -58,7 +58,7 @@ export const routes = new Elysia({ prefix: "/users" })
 	)
 	.get("/@me/friends", ({ jwt }) => {}) // TODO: return friends
 	.post(
-		"/@me/friends",
+		"/@me/friends", // Create a friend request
 		async ({ set, headers, body: { to }, jwt }) => {
 			try {
 				const token = headers.authorization;
@@ -175,6 +175,11 @@ export const routes = new Elysia({ prefix: "/users" })
 							"Too many friend requests sent. Only 1 active request is allowed at 1 moment",
 					},
 				),
+			},
+			detail: {
+				tags: ["User Actions"],
+				description:
+					"API endpoint to send a request from your own user to another user",
 			},
 		},
 	)
