@@ -11,6 +11,9 @@ import manifestJson from "../manifest.json";
 //  - Patch
 //
 // Have fun and discuss on discord in case we need to change this order ^^
+
+// NOTE! The manifest needs some working through. Would appreciate if anyone could implement a json schema or some sort of standard for the manifest format. // Spamix
+
 export const routes = new Elysia({ prefix: "/server" }).use(jwt).get(
 	"/manifest",
 	async ({ set }) => {
