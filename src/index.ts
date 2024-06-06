@@ -4,6 +4,7 @@ import { migrate } from "drizzle-orm/mysql2/migrator";
 import { Elysia } from "elysia";
 import jwt from "./jwt";
 import { db } from "./lib/db";
+import { routes as serverRoutes } from "./routes/server";
 import { routes as sessionRoutes } from "./routes/session";
 import { routes as usersRoutes } from "./routes/users";
 
@@ -25,6 +26,10 @@ const app = new Elysia({ prefix: "/v0" })
 					},
 					{ name: "Session", description: "Session API endpoints" },
 					{ name: "User", description: "General User API endpoints" },
+					{
+						name: "Server",
+						description: "Server specific API endpoints, like the manifest",
+					},
 				],
 				info: {
 					title: "OpenChampAPI Documentation",
@@ -38,6 +43,7 @@ const app = new Elysia({ prefix: "/v0" })
 	.use(jwt)
 	.use(usersRoutes)
 	.use(sessionRoutes)
+	.use(serverRoutes)
 	.listen(Bun.env.PORT ?? 8080);
 
 // import { StartInstances } from "./queue";

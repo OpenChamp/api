@@ -1,9 +1,25 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import Elysia, { t } from "elysia";
+import { v4 as uuid4 } from "uuid";
 import jwt from "../jwt";
 import { db } from "../lib/db";
-import { projectionUserPublic, tUser, users } from "../lib/schema";
+import {
+	friends,
+	projectionFriendship,
+	projectionUserPublic,
+	tUser,
+	users,
+} from "../lib/schema";
 
+// General rules for request method additions
+// The order is as follows for all methods:
+// 	- Get
+//  - Post
+//  - Put
+//  - Delete
+//  - Patch
+//
+// Have fun and discuss on discord in case we need to change this order ^^
 export const routes = new Elysia({ prefix: "/users" })
 	.use(jwt)
 	.get(
@@ -49,8 +65,235 @@ export const routes = new Elysia({ prefix: "/users" })
 			},
 		},
 	)
-	.get("/@me/friends", ({ jwt }) => {}) // TODO: return friends
-	.post("/@me/friends", ({ jwt }) => {}) // TODO: send friend request
+	.get(
+		"/@me/friends",
+		async ({ set, headers, jwt }) => {
+			try {
+				const token = headers.authorization;
+				if (!token) throw new Error("No token provided"); // check if token exists in headers
+				const { tag } = (await jwt.verify(token)) as { tag: string };
+				if (!tag) throw new Error("Invalid token"); // checking for invalid token
+				// Get the ID from the user tag
+				const [user_id] = await db
+					.select({
+						id: users.id,
+					})
+					.from(users)
+					.where(eq(users.tag, tag))
+					.limit(1);
+
+				// Get all user friend ids from the friends database
+				const userFriendsIds = await db
+					.select({
+						id: friends.friend_id,
+					})
+					.from(friends)
+					.where(
+						and(eq(friends.user_id, user_id.id), eq(friends.accepted, true)),
+					);
+
+				const userFriends: any = []; // We use any instead of object here, because the type checking freaks out otherwise :3
+				// Loop over the friend IDs and add to return object
+				for (let friend of userFriendsIds) {
+					console.log(friend);
+					let friendId = await db
+						.select(projectionUserPublic)
+						.from(users)
+						.where(eq(users.id, friend.id))
+						.limit(1);
+					userFriends.push(friendId);
+				}
+
+				set.status = 200;
+				return userFriends;
+			} catch (error: Error | unknown | any) {
+				if (error instanceof Error) {
+					switch (error.message) {
+						case 'Item "description" missing in body':
+							set.status = 400;
+							return { error: error.message };
+						case "No token provided":
+						case "Invalid token":
+							set.status = 401;
+							return { error: "Invalid token" };
+						default:
+							set.status = 500;
+							return { error: "Unknown error" };
+					}
+				} else {
+					set.status = 500;
+					return { error: "Unknown error" };
+				}
+			}
+		},
+		{
+			response: {
+				200: t.Array(tUser, {
+					description: "Returns an array of friend profile objects",
+				}),
+				500: t.Object(
+					{
+						error: t.String(),
+					},
+					{
+						description:
+							"An unknown error occurred, most likely on the server side",
+					},
+				),
+				401: t.Object(
+					{
+						error: t.String(),
+					},
+					{ description: "Tried to authenticate with an invalid token" },
+				),
+				400: t.Object(
+					{
+						error: t.String(),
+					},
+					{ description: "You have a malformed request body" },
+				),
+			},
+			detail: {
+				tags: ["User Actions"],
+				description:
+					"API endpoint to send a request from your own user to another user",
+			},
+		},
+	)
+	.post(
+		"/@me/friends/:id", // Create a friend request to specified id
+		async ({ set, headers, params: { id }, jwt }) => {
+			try {
+				const token = headers.authorization;
+				if (!token) throw new Error("No token provided"); // check if token exists in headers
+				const { tag } = (await jwt.verify(token)) as { tag: string };
+				if (!tag) throw new Error("Invalid token"); // checking for invalid token
+				// Get the from ID
+				const [user_id] = await db
+					.select({
+						id: users.id,
+					})
+					.from(users)
+					.where(eq(users.tag, tag))
+					.limit(1);
+
+				const [doesFriendshipExist] = await db
+					.select(projectionFriendship)
+					.from(friends)
+					.where(
+						and(eq(friends.user_id, user_id.id), eq(friends.friend_id, id)),
+					)
+					.limit(1);
+				if (doesFriendshipExist) {
+					throw new Error("Too many friend requests sent!");
+				}
+
+				let fUuid = uuid4();
+
+				// Check if the friendship ID already exists, and if so, skip and generate a new one
+				while (true) {
+					let [fUuidExists] = await db
+						.select({
+							id: friends.friendship_uuid,
+						})
+						.from(friends)
+						.where(eq(friends.friendship_uuid, fUuid))
+						.limit(1);
+					if (fUuidExists) {
+						fUuid = uuid4();
+					} else {
+						break;
+					}
+				}
+
+				await db.insert(friends).values({
+					user_id: user_id.id,
+					friend_id: id,
+					friendship_uuid: fUuid,
+				});
+				return "Friend request was successfully sent!";
+			} catch (error: Error | unknown | any) {
+				if (error instanceof Error) {
+					switch (error.message) {
+						case 'Item "description" missing in body':
+							set.status = 400;
+							return { error: error.message };
+						case "No token provided":
+						case "Invalid token":
+							set.status = 401;
+							return { error: "Invalid token" };
+						case "Too many friend requests sent!":
+							set.status = 429;
+							return { error: error.message };
+						default:
+							set.status = 500;
+							return { error: "Unknown error" };
+					}
+				} else {
+					set.status = 500;
+					return { error: "Unknown error" };
+				}
+			}
+		},
+		{
+			/*body: t.Object(
+				{
+					to: t.String(),
+				},
+				{
+					description: "To what user ID to send the friend request",
+				},
+			),*/
+			params: t.Object(
+				{
+					id: t.String(),
+				},
+				{
+					description: "User ID to send friend request",
+				},
+			),
+			response: {
+				200: t.String({
+					description: "Returns with a string if the friend request went well.",
+				}),
+				500: t.Object(
+					{
+						error: t.String(),
+					},
+					{
+						description:
+							"An unknown error occurred, most likely on the server side",
+					},
+				),
+				401: t.Object(
+					{
+						error: t.String(),
+					},
+					{ description: "Tried to authenticate with an invalid token" },
+				),
+				400: t.Object(
+					{
+						error: t.String(),
+					},
+					{ description: "You have a malformed request body" },
+				),
+				429: t.Object(
+					{
+						error: t.String(),
+					},
+					{
+						description:
+							"Too many friend requests sent. Only 1 active request is allowed at 1 moment",
+					},
+				),
+			},
+			detail: {
+				tags: ["User Actions"],
+				description:
+					"API endpoint to send a request from your own user to another user",
+			},
+		},
+	)
 	.post(
 		"/", // Create user account
 		async ({ set, body: { tag, password }, jwt }) => {
@@ -261,6 +504,115 @@ export const routes = new Elysia({ prefix: "/users" })
 						error: t.String(),
 					},
 					{ description: "You have a malformed request body" },
+				),
+			},
+			detail: {
+				tags: ["User Settings"],
+				description: "Update user display name",
+			},
+		},
+	)
+	.put(
+		// accept friend request
+		"/@me/friend/:id/",
+		async ({ headers, set, params: { id }, body: { accept }, jwt }) => {
+			try {
+				const token = headers.authorization;
+				if (!token) throw new Error("No token provided"); // check if token exists in headers
+				const { tag } = (await jwt.verify(token)) as { tag: string };
+				if (!tag) throw new Error("Invalid token"); // checking for invalid token
+
+				// Get the user id from the Users DB
+				const [user_id] = await db
+					.select({
+						id: users.id,
+					})
+					.from(users)
+					.where(eq(users.tag, tag))
+					.limit(1);
+
+				// Update database entry
+				if (accept) {
+					await db
+						.update(friends)
+						.set({ accepted: true })
+						.where(
+							and(
+								eq(friends.user_id, user_id.id),
+								eq(friends.friend_id, id),
+								eq(friends.accepted, false),
+							),
+						);
+				} else {
+					await db
+						.delete(friends)
+						.where(
+							and(
+								eq(friends.user_id, user_id.id),
+								eq(friends.friend_id, id),
+								eq(friends.accepted, false),
+							),
+						);
+				}
+
+				return "Update successful";
+			} catch (error: Error | unknown | any) {
+				if (error instanceof Error) {
+					switch (error.message) {
+						case "Friend request already accepted":
+						case 'Not a valid action. Please use either "accept" or "deny"':
+							set.status = 400;
+							return { error: error.message };
+						case "No token provided":
+						case "Invalid token":
+							set.status = 401;
+							return { error: "Invalid token" };
+						default:
+							set.status = 500;
+							return { error: "Unknown error" };
+					}
+				} else {
+					set.status = 500;
+					return { error: "Unknown error" };
+				}
+			}
+		},
+		{
+			params: t.Object(
+				{
+					id: t.String(),
+				},
+				{
+					description:
+						"The id of the user which you want to accept as a friend",
+				},
+			),
+			body: t.Object(
+				{
+					accept: t.Boolean(),
+				},
+				{
+					description: "True to accept, false to deny",
+				},
+			),
+			response: {
+				200: t.String({
+					description: "Successful update of user display name",
+				}),
+				500: t.Object(
+					{
+						error: t.String(),
+					},
+					{
+						description:
+							"An unknown error occurred, most likely on the server side",
+					},
+				),
+				401: t.Object(
+					{
+						error: t.String(),
+					},
+					{ description: "Tried to authenticate with an invalid token" },
 				),
 			},
 			detail: {

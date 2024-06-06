@@ -12,9 +12,13 @@
     "@elysiajs/cors": "^1.0.2",
     "@elysiajs/jwt": "^1.0.2",
     "@elysiajs/swagger": "^1.0.5",
+    "@types/uuid": "^9.0.8",
     "drizzle-orm": "^0.30.10",
     "elysia": "latest",
-    "mysql2": "^3.9.9"
+    "graphql": "^16.8.1",
+    "graphql-request": "^7.0.1",
+    "mysql2": "^3.9.9",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@libsql/client": "^0.6.0",
