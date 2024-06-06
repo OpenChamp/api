@@ -513,15 +513,11 @@ export const routes = new Elysia({ prefix: "/users" })
 		},
 	)
 	.put(
-		"/@me/friend/:id/:action",
-		async ({ headers, set, params: { id, action }, jwt }) => {
+		// accept friend request
+		"/@me/friend/:id/",
+		async ({ headers, set, params: { id }, body: { accept }, jwt }) => {
 			try {
 				const token = headers.authorization;
-				action = action.toLocaleLowerCase();
-				if (action != "accept" && action != "deny")
-					throw new Error(
-						'Not a valid action. Please use either "accept" or "deny"',
-					);
 				if (!token) throw new Error("No token provided"); // check if token exists in headers
 				const { tag } = (await jwt.verify(token)) as { tag: string };
 				if (!tag) throw new Error("Invalid token"); // checking for invalid token
@@ -536,7 +532,7 @@ export const routes = new Elysia({ prefix: "/users" })
 					.limit(1);
 
 				// Update database entry
-				if (action == "accept") {
+				if (accept) {
 					await db
 						.update(friends)
 						.set({ accepted: true })
@@ -585,11 +581,18 @@ export const routes = new Elysia({ prefix: "/users" })
 			params: t.Object(
 				{
 					id: t.String(),
-					action: t.String(),
 				},
 				{
 					description:
 						"The id of the user which you want to accept as a friend",
+				},
+			),
+			body: t.Object(
+				{
+					accept: t.Boolean(),
+				},
+				{
+					description: "True to accept, false to deny",
 				},
 			),
 			response: {
