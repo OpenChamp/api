@@ -30,6 +30,9 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 .env
+
+# local testing scripts
+/*_local.testing.ts
 # vercel
 .vercel
 
