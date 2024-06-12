@@ -1,4 +1,4 @@
-import { setup } from "xstate";
+import { createActor, setup } from "xstate";
 import { users } from "../../../lib/schema";
 
 export type DraftPlayer = {
@@ -25,35 +25,37 @@ const template = setup({
 });
 
 export function createMachine(context: MachineContext) {
-	return template.createMachine({
-		context,
-		id: "draft",
-		initial: "picking",
-		states: {
-			picking: {
-				on: {
-					pick: [
-						{
-							target: "picking",
-							guard: {
-								type: "not all picked",
+	return createActor(
+		template.createMachine({
+			context,
+			id: "draft",
+			initial: "picking",
+			states: {
+				picking: {
+					on: {
+						pick: [
+							{
+								target: "picking",
+								guard: {
+									type: "not all picked",
+								},
 							},
+							{
+								target: "in_game",
+							},
+						],
+						abandon: {
+							target: "abandoned",
 						},
-						{
-							target: "in_game",
-						},
-					],
-					abandon: {
-						target: "abandoned",
 					},
 				},
+				in_game: {
+					type: "final",
+				},
+				abandoned: {
+					type: "final",
+				},
 			},
-			in_game: {
-				type: "final",
-			},
-			abandoned: {
-				type: "final",
-			},
-		},
-	});
+		}),
+	);
 }

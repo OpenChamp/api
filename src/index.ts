@@ -1,6 +1,10 @@
+import { ulid } from "@0x57/ulid";
 import cors from "@elysiajs/cors";
+import { ServerWebSocket } from "bun";
 import { migrate } from "drizzle-orm/mysql2/migrator";
 import { Elysia } from "elysia";
+import { gamemodes } from "./gamemodes";
+import { LobbyManager } from "./gamemodes/lobby_manager";
 import jwt from "./jwt";
 import { db } from "./lib/db";
 import { routes as sessionRoutes } from "./routes/session";
@@ -12,16 +16,15 @@ await migrate(db, { migrationsFolder: "./drizzle" });
 const socketHeartbeatInterval = 15000;
 const heartbeats = new Map<string, Timer>();
 const socketTagMap = new Map<string, string>();
+const lobbies = new Map<string, LobbyManager>();
+const tagLobbyMap = new Map<string, string>();
 
-const app = new Elysia({ prefix: "/v0" })
+export const app = new Elysia({ prefix: "/v0" })
 	.use(cors())
 	.use(jwt)
 	.use(usersRoutes)
 	.use(sessionRoutes)
 	.ws("/ws", {
-		close(ws) {
-			console.log(`User disconnected: ${ws.id}`);
-		},
 		async open(ws) {
 			const token = ws.data.query.jwt;
 			console.log(token);
@@ -47,10 +50,30 @@ const app = new Elysia({ prefix: "/v0" })
 			});
 			console.log(`User connected: ${ws.id}, ${tag}`);
 		},
+		async close(ws) {
+			const tag = socketTagMap.get(ws.id);
+			if (tag) {
+				const lobbyId = tagLobbyMap.get(tag);
+				if (lobbyId) {
+					const lobby = lobbies.get(lobbyId);
+					if (lobby) {
+						lobby.disconnectMember(tag);
+						// TODO: cleanup dead lobbies
+					}
+					tagLobbyMap.delete(tag);
+				}
+				socketTagMap.delete(ws.id);
+			}
+			console.log(`User disconnected: ${ws.id}`);
+		},
+		// TODO: this is a bit messy, just meant as a proof of concept for now. needs to be refactored once the entire protocol is figured out.
 		message(ws, message) {
 			console.log(message);
+			const tag = socketTagMap.get(ws.id);
 			if (!message || typeof message !== "object" || !("e" in message)) {
-				console.log(`${ws.id} sent invalid message, closing connection`);
+				console.log(
+					`${ws.id} (${tag}) sent invalid message, closing connection`,
+				);
 				ws.close();
 				return;
 			}
@@ -63,6 +86,32 @@ const app = new Elysia({ prefix: "/v0" })
 					}, socketHeartbeatInterval * 1.5),
 				);
 				ws.send({ e: "heartbeat_ack" });
+				return;
+			}
+			if (!tag) {
+				ws.close();
+				return;
+			}
+			const currentLobbyId = tagLobbyMap.get(tag);
+			if (currentLobbyId) {
+				lobbies.get(currentLobbyId)?.handleMessage(message);
+				return;
+			}
+			if (message.e === "lobby[create]") {
+				const LobbyManagerClass =
+					gamemodes[message.d?.gamemode as keyof typeof gamemodes];
+				console.log(LobbyManagerClass);
+				if (!LobbyManagerClass) {
+					ws.send({
+						e: "error",
+						d: { message: "Invalid gamemode" },
+					});
+					return;
+				}
+				const lobby = new LobbyManagerClass(ulid());
+				lobbies.set(lobby.id, lobby);
+				tagLobbyMap.set(tag, lobby.id);
+				lobby.connectMember(tag, ws as unknown as ServerWebSocket);
 			}
 		},
 	})
