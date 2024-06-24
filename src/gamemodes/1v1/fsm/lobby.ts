@@ -55,6 +55,12 @@ export function createMachine() {
 				},
 				"in queue": {
 					on: {
+						ready: {
+							target: "unqueueable",
+							guard: {
+								type: "not all ready",
+							},
+						},
 						matched: {
 							target: "accepting",
 						},

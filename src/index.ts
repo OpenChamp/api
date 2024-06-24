@@ -94,7 +94,7 @@ export const app = new Elysia({ prefix: "/v0" })
 			}
 			const currentLobbyId = tagLobbyMap.get(tag);
 			if (currentLobbyId) {
-				lobbies.get(currentLobbyId)?.handleMessage(message);
+				lobbies.get(currentLobbyId)?.handleMessage(tag, message);
 				return;
 			}
 			if (message.e === "lobby[create]") {
